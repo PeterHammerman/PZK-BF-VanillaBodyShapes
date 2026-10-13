@@ -1,8 +1,5 @@
 {
-  "ContextMenu_MinimalDisplayBars_bf_pregnancy": "Pregnancy",
-  "ContextMenu_MinimalDisplayBars_bf_lactation": "Lactation",
-  "ContextMenu_MinimalDisplayBars_zr_arousal": "Arousal",
-  "ContextMenu_MinimalDisplayBars_zl_excitation": "Excitation",
+
   "ContextMenu_BFMDB_Toggle": "Toggle Pregnancy/Lactation/Arousal/Excitation Bars",
   "ContextMenu_BFMDB_Preset_LegacyCompat": "Apply Legacy + Compat Layout",
   "ContextMenu_BFMDB_DebugWindow": "Body Shape Debug Window"

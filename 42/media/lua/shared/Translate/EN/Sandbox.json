@@ -1,7 +1,7 @@
 {
-  "Sandbox_BFMDBCompat": "Body Shape (female player)",
-  "Sandbox_BFMDBCompat_MinBreastSize": "Minimum breast size",
-  "Sandbox_BFMDBCompat_MinBreastSize_tooltip": "Breast size of the female player when NOT lactating. 0 = vanilla-like (default), 1 = fully feminine (the 'more feminine' shape).",
-  "Sandbox_BFMDBCompat_MaxLactationBreastSize": "Breast size at full lactation",
-  "Sandbox_BFMDBCompat_MaxLactationBreastSize_tooltip": "Breast size when lactation is full. 1.0 = the standard maximum (default). Higher values go bigger than that, up to 3.0. Size scales between the minimum and this value as lactation rises."
+  "Sandbox_pzkBodyMeshBF": "Body Shape (female player)",
+  "Sandbox_pzkBodyMeshBF_MinBreastSize": "Minimum breast size",
+  "Sandbox_pzkBodyMeshBF_MinBreastSize_tooltip": "Breast size of the female player when NOT lactating. 0 = vanilla-like (default), 1 = fully feminine (the 'more feminine' shape).",
+  "Sandbox_pzkBodyMeshBF_MaxLactationBreastSize": "Breast size at full lactation",
+  "Sandbox_pzkBodyMeshBF_MaxLactationBreastSize_tooltip": "Breast size when lactation is full. 1.0 = the standard maximum (default). Higher values go bigger than that, up to 3.0. Size scales between the minimum and this value as lactation rises."
 }
