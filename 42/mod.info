@@ -1,0 +1,10 @@
+name= PZK Body Shape (female player only)
+id=pzkBFBodyShapeHook
+description=PZK ZombieBuddy hook: feeds BodyShapeEnabled / LactationProgress / PregnancyProgress to the body shader, for the local female player model only.
+versionMin=42.21.0
+authors=Peter Hammerman
+poster=preview.png
+icon=icon.png
+require=\ZombieBuddy,\BF
+javaJarFile=media/java/client/build/libs/client.jar
+javaPkgName=com.bfbodyshape

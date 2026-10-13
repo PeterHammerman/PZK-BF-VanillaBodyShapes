@@ -1,0 +1,21 @@
+VERSION = 1,
+
+option BFMDBCompat.MinBreastSize
+{
+    type = double,
+    min = 0.0,
+    max = 1.0,
+    default = 0.3,
+    page = BFMDBCompat,
+    translation = BFMDBCompat_MinBreastSize,
+}
+
+option BFMDBCompat.MaxLactationBreastSize
+{
+    type = double,
+    min = 1.0,
+    max = 3.0,
+    default = 1.0,
+    page = BFMDBCompat,
+    translation = BFMDBCompat_MaxLactationBreastSize,
+}

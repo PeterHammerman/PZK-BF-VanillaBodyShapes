@@ -1,0 +1,77 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.bfbodyshape'
+version = '1.0.0'
+
+java {
+    // Bytecode level 17 runs on every JVM the game ships with.
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+// mod.info points at build/libs/client.jar. Without this, Gradle appends the project
+// version and produces client-1.0.0.jar, which ZombieBuddy would never find.
+jar {
+    archiveFileName = 'client.jar'
+}
+
+repositories { mavenCentral() }
+
+// ---- Locate and inspect ZombieBuddy.jar ------------------------------------------
+// Gradle silently ignores a missing file in files(...), which produces confusing
+// "package does not exist" errors - so check it explicitly.
+def zbFile = file(zombieBuddyJar)
+if (!zbFile.isFile()) {
+    throw new GradleException(
+        "zombieBuddyJar not found: '${zombieBuddyJar}'\n" +
+        "Edit gradle.properties. ZombieBuddy.jar is normally in the game folder " +
+        "(the one you added as -javaagent in ProjectZomboid64.json).")
+}
+
+def zbHas = { String entry ->
+    def zf = new java.util.zip.ZipFile(zbFile)
+    try { return zf.getEntry(entry) != null } finally { zf.close() }
+}
+
+// Different ZombieBuddy releases keep the @Patch annotation in different packages.
+//   newer: me.zed_0xff.zombie_buddy.annotations.Patch  -> src/variants/annotations
+//   older: me.zed_0xff.zombie_buddy.Patch              -> src/variants/legacy
+def zbVariant
+if (zbHas('me/zed_0xff/zombie_buddy/annotations/Patch.class')) {
+    zbVariant = 'annotations'
+} else if (zbHas('me/zed_0xff/zombie_buddy/Patch.class')) {
+    zbVariant = 'legacy'
+} else {
+    throw new GradleException(
+        "'${zbFile}' does not contain a ZombieBuddy @Patch annotation " +
+        "(looked for me/zed_0xff/zombie_buddy/Patch.class and .../annotations/Patch.class). " +
+        "Wrong jar? Point zombieBuddyJar at the real ZombieBuddy.jar.")
+}
+logger.lifecycle("ZombieBuddy jar: ${zbFile} -> using '${zbVariant}' Patch API sources")
+
+// Optional: the UI-avatar patch (health-panel paper doll). Off by default so the base build is
+// exactly the known-good set of patches. Enable with  enableAvatarPatch=true  in gradle.properties
+// (or  gradle build -PenableAvatarPatch=true ).
+def avatarPatch = (findProperty('enableAvatarPatch') ?: 'false').toString().toBoolean()
+logger.lifecycle("Avatar (UpdateCharacter) patch compiled in: ${avatarPatch}")
+
+sourceSets {
+    main {
+        java {
+            srcDir "src/variants/${zbVariant}/java"
+            if (avatarPatch) {
+                srcDir "src/optional/avatar/${zbVariant}/java"
+            }
+        }
+    }
+}
+
+dependencies {
+    // Provided at runtime by ZombieBuddy / the game - never bundled.
+    compileOnly files(zombieBuddyJar)
+    compileOnly fileTree(dir: pzJavaDir, include: ['**/*.jar'])
+    // ZombieBuddy may ship an annotation processor (it validates @Patch.* bindings).
+    annotationProcessor files(zombieBuddyJar)
+}
