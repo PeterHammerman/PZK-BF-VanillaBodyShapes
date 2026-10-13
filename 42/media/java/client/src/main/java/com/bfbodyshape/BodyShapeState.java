@@ -2,7 +2,9 @@ package com.bfbodyshape;
 
 import zombie.characters.IsoGameCharacter;
 import zombie.core.opengl.ShaderProgram;
+import zombie.core.skinnedmodel.advancedanimation.AnimatedModel;
 import zombie.core.skinnedmodel.model.ModelInstance;
+import zombie.core.skinnedmodel.model.ModelInstanceRenderData;
 import zombie.core.skinnedmodel.model.ModelSlotRenderData;
 import zombie.core.skinnedmodel.shader.Shader;
 
@@ -44,8 +46,8 @@ public final class BodyShapeState {
     }
 
     // ---- avatar patch controls ----
-    /** Off by default: UpdateCharacter is a riskier hook point. Switched on from Lua. */
-    private static volatile boolean avatarEnabled = false;
+    /** The optional UI-avatar patch is active unless explicitly disabled through Lua. */
+    private static volatile boolean avatarEnabled = true;
     /** Tests only: non-null forces the "is a GL context current?" answer. */
     public static volatile Boolean glContextOverride = null;
     private static java.lang.reflect.Method glCaps;
@@ -72,12 +74,27 @@ public final class BodyShapeState {
     private static volatile long shaderCalls, matchedCalls, setCalls;
     private static volatile String lastShader = "(none yet)";
     private static volatile long avatarCalls, avatarMatched;
+    private static volatile long avatarDrawScopes;
     private static volatile String lastAvatar = "(none yet)";
     private static volatile float shownLact, shownPreg;   // what was last written for the target
     private static volatile boolean failed;
     private static volatile String failure = "";
     private static final java.util.Set<String> seenShaders =
             java.util.Collections.synchronizedSet(new java.util.LinkedHashSet<>());
+
+    private static final class AvatarDraw {
+        final ModelInstance modelInstance;
+        final boolean worldPath;
+        final AvatarDraw previous;
+
+        AvatarDraw(ModelInstance modelInstance, boolean worldPath, AvatarDraw previous) {
+            this.modelInstance = modelInstance;
+            this.worldPath = worldPath;
+            this.previous = previous;
+        }
+    }
+
+    private static final ThreadLocal<AvatarDraw> avatarDraw = new ThreadLocal<>();
 
     private BodyShapeState() {}
 
@@ -103,12 +120,16 @@ public final class BodyShapeState {
 
     public static void setAvatarEnabled(boolean on) {
         avatarEnabled = on;
-        System.out.println("[BodyShapeHook] avatar (UpdateCharacter) path " + (on ? "ENABLED" : "disabled"));
+        System.out.println("[BodyShapeHook] avatar draw path " + (on ? "ENABLED" : "disabled"));
     }
 
     private static boolean avatarPatchPresent() {
-        try { Class.forName("com.bfbodyshape.AvatarUpdateCharacterPatch"); return true; }
-        catch (Throwable t) { return false; }
+        try {
+            Class.forName("com.bfbodyshape.AvatarDrawScopePatch");
+            Class.forName("com.bfbodyshape.AvatarShaderStartPatch");
+            return true;
+        }
+        catch (ClassNotFoundException e) { return false; }
     }
 
     public static String status() {
@@ -121,12 +142,34 @@ public final class BodyShapeState {
                 + " kinds[nullSlot=" + seenNullSlot + " nullChar=" + seenNullChar + " target=" + seenTargetChar
                 + " classes=" + seenCharClasses.size() + "]"
                 + " | avatar: patchCompiled=" + avatarPatchPresent() + " enabled=" + avatarEnabled
-                + " skippedNoGL=" + avatarSkippedNoContext + " calls=" + avatarCalls + " matched=" + avatarMatched + " lastChar=" + lastAvatar
+                + " drawScopes=" + avatarDrawScopes + " skippedNoGL=" + avatarSkippedNoContext
+                + " calls=" + avatarCalls + " matched=" + avatarMatched + " lastChar=" + lastAvatar
                 + " lastShader=" + lastShader + " seenShaders=" + seenShaders
                 + (failed ? " | FAILED: " + failure : "");
     }
 
     // ------------------------------------------------------------------ render thread
+
+    /** Associates Shader.Start() with the AnimatedModel draw that invoked it. */
+    public static void beginAvatarDraw(AnimatedModel.AnimatedModelInstanceRenderData data) {
+        avatarDrawScopes++;
+        AvatarDraw previous = avatarDraw.get();
+        avatarDraw.set(new AvatarDraw(data == null ? null : data.modelInstance,
+                data instanceof ModelInstanceRenderData, previous));
+    }
+
+    /** Restores any outer draw scope after DrawCharSingular returns. */
+    public static void endAvatarDraw() {
+        AvatarDraw current = avatarDraw.get();
+        if (current == null || current.previous == null) avatarDraw.remove();
+        else avatarDraw.set(current.previous);
+    }
+
+    /** Called after Shader.Start() binds the program, while inside DrawCharSingular. */
+    public static void applyToCurrentAvatar(Shader shader) {
+        AvatarDraw current = avatarDraw.get();
+        if (current != null) applyToAvatar(shader, current.modelInstance, current.worldPath);
+    }
 
     private static boolean isBodyShader(Shader shader) {
         if (shader == null) return false;
@@ -229,8 +272,9 @@ public final class BodyShapeState {
     }
 
     /**
-     * UI avatars (health panel paper doll) never go through startCharacter; they call
-     * AnimatedModelInstanceRenderData.UpdateCharacter(Shader) directly.
+     * UI avatars (health panel paper doll) draw through DrawCharSingular, which starts the
+     * model's shader without calling Shader.startCharacter. The draw-scope patch supplies
+     * the model instance here after Shader.Start() binds the program.
      *
      * @param worldPath true when the render data is the world-render subclass
      *        (ModelInstanceRenderData). There only an EXACT character match counts, so a
@@ -257,7 +301,7 @@ public final class BodyShapeState {
                     + (c == null ? "null" : (c == s.target ? "target" : c.getClass().getSimpleName()));
             if (!desc.equals(lastAvatar)) {
                 lastAvatar = desc;
-                System.out.println("[BodyShapeHook] UpdateCharacter path saw " + desc + " -> " + (on ? "SHAPED" : "vanilla"));
+                System.out.println("[BodyShapeHook] avatar shader path saw " + desc + " -> " + (on ? "SHAPED" : "vanilla"));
             }
             if (on) avatarMatched++;
             applyIf(shader, s, on);

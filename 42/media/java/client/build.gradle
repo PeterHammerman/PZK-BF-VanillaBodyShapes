@@ -51,11 +51,10 @@ if (zbHas('me/zed_0xff/zombie_buddy/annotations/Patch.class')) {
 }
 logger.lifecycle("ZombieBuddy jar: ${zbFile} -> using '${zbVariant}' Patch API sources")
 
-// Optional: the UI-avatar patch (health-panel paper doll). Off by default so the base build is
-// exactly the known-good set of patches. Enable with  enableAvatarPatch=true  in gradle.properties
-// (or  gradle build -PenableAvatarPatch=true ).
+// Optional: UI-avatar draw hooks (health-panel paper doll). Enable with
+// enableAvatarPatch=true in gradle.properties (or gradle build -PenableAvatarPatch=true).
 def avatarPatch = (findProperty('enableAvatarPatch') ?: 'false').toString().toBoolean()
-logger.lifecycle("Avatar (UpdateCharacter) patch compiled in: ${avatarPatch}")
+logger.lifecycle("Avatar draw patches compiled in: ${avatarPatch}")
 
 sourceSets {
     main {

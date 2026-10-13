@@ -7,9 +7,12 @@ Works with Animeboid shaders and textures like on screens - Animeboid (https://s
 <img width="751" height="773" alt="obraz" src="https://github.com/user-attachments/assets/8fa68c12-c383-4a09-b804-4df04a3fc6c7" />
 
 
-Working on Single player only (local player)
+Working on Single player only (local player).
 
-WIP - UI preview
+The playerstats UI avatar is also shaped when the Java hook is built with its avatar patch
+enabled (the supplied `gradle.properties` sets `enableAvatarPatch=true`). This hooks the
+avatar's `DrawCharSingular` shader-start path; the avatar path is enabled by default and can be
+disabled for the current session from Lua with `BFMDB_SetAvatarPatch(false)`.
 
 Requirement:
 
