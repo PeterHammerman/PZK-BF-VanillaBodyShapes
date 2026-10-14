@@ -12,6 +12,8 @@ Working on Single player only (local player).
 
 Requirement:
 
+Mod must be enabled in main menu and added to game save. After adding in game menu game must restarted - it overrides player shaders to work properly.
+
 ZombieBuddy https://steamcommunity.com/sharedfiles/filedetails/?id=3619862853
 
 Being Female https://www.loverslab.com/files/file/48296-being-female/
